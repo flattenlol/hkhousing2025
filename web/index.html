@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="zh-Hant-HK">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#143d36">
+  <meta name="description" content="居屋 2025 選樓觀察站：啟陽苑、影輝苑配額與單位銷售狀況。">
+  <title>居屋 2025 · 選樓觀察站</title>
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./app.mjs"></script>
+</head>
+<body>
+  <div class="site-shell">
+    <header class="masthead">
+      <a class="brand" href="./" aria-label="選樓觀察站首頁">
+        <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
+        <span>居屋 2025 <small>選樓觀察站</small></span>
+      </a>
+      <div class="masthead-right">
+        <span class="source-pill"><i></i> 房委會公開資料</span>
+        <span id="checked-time" class="checked-time">正在載入資料...</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="page-title">
+        <div class="hero-copy">
+          <p class="eyebrow">HOS 2025 / SELECTION INTELLIGENCE</p>
+          <h1 id="page-title">下一個選擇，<br><em>看得更清楚。</em></h1>
+          <p class="hero-description">啟陽苑與影輝苑銷售狀態、優先計劃配額，以及你的心水單位。資料以官方 PDF 為準；本頁僅作輔助參考。</p>
+          <div class="hero-actions">
+            <a class="primary-link" href="#sales">探索單位 <span aria-hidden="true">↗</span></a>
+            <a class="quiet-link" href="#profile">設定我的偏好 <span aria-hidden="true">↓</span></a>
+          </div>
+        </div>
+        <div class="hero-graphic" aria-hidden="true">
+          <span class="graphic-label">FLAT / FLOOR / CHOICE</span>
+          <div class="graphic-grid"></div>
+          <span class="graphic-corner">KAI YEUNG<br>YING FAI</span>
+        </div>
+      </section>
+
+      <div id="error" class="error-banner" role="alert" hidden></div>
+
+      <section class="section quotas" aria-labelledby="quota-title">
+        <div class="section-header">
+          <div><p class="eyebrow">01 / 優先計劃</p><h2 id="quota-title">尚餘配額 <span class="subtitle">不是尚餘單位數</span></h2></div>
+          <a class="source-link" href="https://www.housingauthority.gov.hk/mini-site/hos2025/common/pdf/status/status-court-quota.pdf" target="_blank" rel="noopener">官方配額 PDF ↗</a>
+        </div>
+        <p class="section-note">家有長者及／或家有初生優先選樓計劃。GP 與 WP 同屬此階段；配額按屋苑計算，與下面各座未售單位數目不同。</p>
+        <div id="quota-cards" class="quota-cards">
+          <div class="skeleton-card"></div><div class="skeleton-card"></div>
+        </div>
+        <div class="quota-foot"><span id="quota-modified">官方更新時間：—</span><span id="delta-note">一小時差額以已記錄快照計算</span></div>
+      </section>
+
+      <section id="profile" class="profile-band" aria-labelledby="profile-title">
+        <div class="profile-intro">
+          <p class="eyebrow">02 / 私人選樓坐標</p>
+          <h2 id="profile-title">只屬於你的<br><em>候選名單。</em></h2>
+          <p>申請編號與選樓時段只儲存在此瀏覽器。喜好只會在你主動複製分享連結時加入網址。</p>
+          <div class="private-note"><span aria-hidden="true">◎</span> 編號與時段僅此裝置可見</div>
+        </div>
+        <form id="profile-form" class="profile-form">
+          <div class="field-row">
+            <label>選樓次序編號<input id="applicant-code" type="text" autocomplete="off" placeholder="例如 GP000123" maxlength="16"></label>
+            <label>已確認選樓時段<input id="selection-at" type="datetime-local"></label>
+          </div>
+          <div class="field-row">
+            <label>優先屋苑<select id="court-first"><option value="">未設定</option><option value="kai-yeung">啟陽苑</option><option value="ying-fai">影輝苑</option></select></label>
+            <label>偏好樓層由<input id="floor-min" type="number" min="1" max="50" placeholder="例如 15"></label>
+          </div>
+          <div class="field-row">
+            <label>啟陽苑較不偏好樓層 <span class="hint">範圍及單層用逗號分隔</span><input id="avoid-kai" type="text" placeholder="例如 8-10, 32"></label>
+            <label>影輝苑較不偏好樓層 <span class="hint">範圍及單層用逗號分隔</span><input id="avoid-ying" type="text" placeholder="例如 6-8, 30"></label>
+          </div>
+          <label>單位喜好排序 <span class="hint">每行「屋苑 座：室號 &gt; 室號 = 室號」，相同座的後續行接續排序</span>
+            <textarea id="rankings" rows="4" spellcheck="false" placeholder="啟陽 A: 1 &gt; 2&#10;影輝 B: 15 = 16"></textarea>
+          </label>
+          <div class="form-footer"><span id="profile-message" role="status">未設定個人偏好</span>
+            <div class="form-actions"><button type="button" id="share-button" class="share-button">複製喜好連結 ↗</button>
+              <button type="submit" class="save-button">儲存在此瀏覽器 <span aria-hidden="true">→</span></button></div>
+          </div>
+          <div id="share-panel" class="share-panel" hidden>
+            <p>分享連結會顯示你的喜好及面積篩選，亦可能留在瀏覽紀錄；不包含申請編號或選樓時段。</p>
+            <input id="share-url" type="url" aria-label="可手動複製的喜好連結" readonly>
+          </div>
+        </form>
+      </section>
+
+      <section id="sales" class="section sales" aria-labelledby="sales-title">
+        <div class="section-header">
+          <div><p class="eyebrow">03 / 單位地圖</p><h2 id="sales-title">每一格，都是一個可能。</h2></div>
+          <div class="refresh-controls">
+            <span id="refresh-countdown" class="refresh-countdown">頁面每 15 分鐘檢查新快照</span>
+            <button type="button" id="refresh-button" class="outline-button">讀取最新已發布資料 ↻</button>
+          </div>
+        </div>
+        <p class="section-note">房委會 PDF 約每 15 分鐘由排程檢查，實際發布可能延遲。「讀取最新」不會即時向房委會抓取資料；按下後冷卻 1 分鐘。</p>
+        <div class="filters">
+          <div class="filter-heading"><span>篩選實用面積</span><small>數字為兩苑四座合計未售單位 · 深色代表較大單位 · 可複選</small></div>
+          <div id="category-filters" class="category-filters"></div>
+        </div>
+        <div class="court-summary" id="court-summary"></div>
+        <div class="sales-toolbar">
+          <div id="block-tabs" class="block-tabs" role="tablist" aria-label="選擇屋苑座別"></div>
+          <label class="history-control">查看之前更新
+            <select id="history-select"><option value="latest">最新資料</option></select>
+          </label>
+        </div>
+        <div class="matrix-header">
+          <div><h3 id="matrix-title">載入銷售表格中</h3><p id="matrix-meta"></p></div>
+          <a id="block-source" class="source-link" target="_blank" rel="noopener" href="#">查看原始 PDF ↗</a>
+        </div>
+        <div id="legend" class="legend"></div>
+        <p id="table-guide" class="table-guide">橫向捲動查看所有室號 · 點選方格查看單位詳情</p>
+        <div id="matrix-scroll" class="matrix-scroll">
+          <div id="matrix" class="matrix" aria-label="按樓層和單位排列的銷售狀態"></div>
+        </div>
+      </section>
+
+      <section class="section shortlist" aria-labelledby="shortlist-title">
+        <div class="section-header"><div><p class="eyebrow">04 / 你的視線</p><h2 id="shortlist-title">值得留意的單位</h2></div><span class="small-caps">PREFERENCE ≠ PROBABILITY</span></div>
+        <p class="section-note">按你儲存的偏好及最新官方狀態排序；如歷史足夠，另標示近期狀態變化。此排序不是成功購買機率，也不代表單位已為你保留。</p>
+        <div id="shortlist-content" class="shortlist-content"><p class="empty-state">先填寫上方喜好排序，便可以將仍然可選的心水單位放到這裡。</p></div>
+      </section>
+    </main>
+
+    <footer class="footer"><div><strong>居屋 2025 / 選樓觀察站</strong><p>非房委會官方網站。狀態及選樓資格以房委會公布和選樓當日資料為準。</p></div><a href="https://hos.housingauthority.gov.hk/mini-site/hos2025/tc/index.html" target="_blank" rel="noopener">居屋 2025 官方網站 ↗</a></footer>
+  </div>
+
+  <div id="drawer-scrim" class="drawer-scrim" hidden></div>
+  <aside id="detail-drawer" class="detail-drawer" aria-labelledby="drawer-title" aria-modal="true" role="dialog" hidden>
+    <button id="drawer-close" class="drawer-close" type="button" aria-label="關閉詳情">×</button>
+    <div id="drawer-content"></div>
+  </aside>
+</body>
+</html>
