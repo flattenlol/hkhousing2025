@@ -203,6 +203,7 @@ def changes_between(before: dict, after: dict) -> dict | None:
 def publish(snapshot: dict, output_dir: Path) -> bool:
     latest_path = output_dir / "latest.json"
     history_path = output_dir / "history.json"
+    heartbeat_path = output_dir / "heartbeat.json"
     before = json.loads(latest_path.read_text(encoding="utf-8")) if latest_path.exists() else None
     history = json.loads(history_path.read_text(encoding="utf-8")) if history_path.exists() else {
         "startedAt": snapshot["checkedAt"], "events": []
@@ -221,7 +222,8 @@ def publish(snapshot: dict, output_dir: Path) -> bool:
         if datetime.fromisoformat(event["at"].replace("Z", "+00:00")) >= cutoff
     ]
     output_dir.mkdir(parents=True, exist_ok=True)
-    for path, content in ((latest_path, snapshot), (history_path, history)):
+    for path, content in ((latest_path, snapshot), (history_path, history),
+                          (heartbeat_path, {"checkedAt": snapshot["checkedAt"]})):
         temporary = path.with_suffix(".tmp")
         temporary.write_text(json.dumps(content, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
         temporary.replace(path)

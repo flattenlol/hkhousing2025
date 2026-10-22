@@ -3,3 +3,6 @@ __pycache__/
 *.pyc
 web/assets/*.webp
 web/brochures/*.pdf
+.wrangler/
+scheduler/.dev.vars*
+scheduler/.env*

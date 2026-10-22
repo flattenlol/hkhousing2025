@@ -96,6 +96,8 @@ class HistoryTests(unittest.TestCase):
             self.assertEqual(len(json.loads((output / "history.json").read_text())["events"]), 1)
             self.assertEqual(json.loads((output / "latest.json").read_text())["checkedAt"],
                              "2026-10-21T13:30:00Z")
+            self.assertEqual(json.loads((output / "heartbeat.json").read_text())["checkedAt"],
+                             "2026-10-21T13:30:00Z")
 
     def test_legacy_samples_are_removed_without_creating_new_events(self):
         first = snapshot()

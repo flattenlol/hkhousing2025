@@ -1,0 +1,11 @@
+{
+  "name": "hos2025-status-scheduler",
+  "main": "./worker.mjs",
+  "compatibility_date": "2026-10-01",
+  "triggers": {
+    "crons": ["10,25,40,55 * * * *"]
+  },
+  "observability": {
+    "enabled": true
+  }
+}

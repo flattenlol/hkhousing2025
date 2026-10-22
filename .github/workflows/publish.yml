@@ -27,7 +27,7 @@ jobs:
           cache: pip
       - run: python -m pip install -r requirements.txt
       - run: python -m unittest discover -s tests
-      - run: node --test tests/test_model.mjs
+      - run: node --test tests/test_model.mjs tests/test_scheduler.mjs
       - name: Check official PDFs
         id: refresh
         run: python scripts/update_data.py
@@ -37,7 +37,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add web/data/latest.json web/data/history.json
+          git add web/data/latest.json web/data/history.json web/data/heartbeat.json
           if ! git diff --cached --quiet; then
             git commit -m "data: record HOS status check"
             git push
