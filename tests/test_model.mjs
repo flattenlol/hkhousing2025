@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   BLOCK_KEYS, availableByCategory, countAvailable, createPreferenceUrl, parseAvoidFloors,
-  parsePreferences, planPagesForFlat, quotaHourDelta, readPreferenceUrl,
+  lastStatusChange, parsePreferences, planPagesForFlat, quotaHourDelta, readPreferenceUrl,
   recentChanges, shortlist, snapshotAt,
 } from "../web/model.mjs";
 
@@ -103,7 +103,7 @@ test("shared URL round-trips preferences and filters without exposing applicant 
   assert.throws(() => readPreferenceUrl("https://example.org/?prefFloor=99"), /偏好樓層/);
 });
 
-test("historical versions undo only later changes; flashes require a new PDF timestamp", () => {
+test("historical versions undo later changes; last sales change survives quota-only updates", () => {
   const latest = structuredClone(starting);
   latest.checkedAt = "2026-10-21T14:00:00Z";
   latest.blocks["kai-yeung-b"].flats[0].s = "sold";
@@ -126,6 +126,15 @@ test("historical versions undo only later changes; flashes require a new PDF tim
   assert.equal(snapshotAt(latest, history, -1).blocks["kai-yeung-b"].flats[0].s, "available");
   assert.equal(snapshotAt(latest, history, -1).blocks["kai-yeung-b"].bands.medium.max, 36.5);
   assert.deepEqual([...recentChanges(history)], ["kai-yeung-b-4011"]);
+  history.events.push({ at: "2026-10-21T15:00:00Z", beforeQuota: starting.quota,
+    afterQuota: latest.quota, blocks: {} });
+  assert.deepEqual([...recentChanges(history)], ["kai-yeung-b-4011"]);
+  assert.deepEqual([...recentChanges(history, 0)], ["kai-yeung-b-4011"]);
+  assert.equal(recentChanges(history, 1).size, 0);
+  assert.equal(lastStatusChange(history).event.at, latest.checkedAt);
+  assert.equal(lastStatusChange(history).flats[0].after.s, "sold");
+  assert.equal(lastStatusChange(history, 1), null);
+  assert.equal(lastStatusChange(history, -1), null);
   event.blocks["kai-yeung-b"].afterModified = "2026-10-21 20:00";
   assert.equal(recentChanges(history).size, 0);
 });

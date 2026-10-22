@@ -1,7 +1,7 @@
 import {
   BLOCK_KEYS, CATEGORIES, COURT_NAMES, availableByCategory, countAvailable,
   createPreferenceUrl, parseAvoidFloors, parsePreferences, planPagesForFlat,
-  quotaHourDelta, readPreferenceUrl, recentChanges, shortlist, snapshotAt,
+  quotaHourDelta, readPreferenceUrl, lastStatusChange, shortlist, snapshotAt,
 } from "./model.mjs";
 
 const PDF_BASE = "https://www.housingauthority.gov.hk/mini-site/hos2025/common/pdf/status/";
@@ -206,6 +206,36 @@ function renderTabs() {
     role="tab" data-block="${key}" aria-selected="${state.activeBlock === key}">${NAMES[key]}</button>`).join("");
 }
 
+function renderChanges(changes) {
+  const panel = $("changes-panel");
+  if (!changes) {
+    panel.hidden = true;
+    panel.replaceChildren();
+    return;
+  }
+  const labels = { available: "未售", selected: "已選", sold: "已售" };
+  const byBlock = BLOCK_KEYS.map(key => ({
+    key, count: changes.flats.filter(flat => flat.key === key).length,
+  })).filter(group => group.count);
+  panel.hidden = false;
+  panel.innerHTML = `
+    <div class="changes-heading">
+      <div><p class="eyebrow">STATUS CHANGE / 狀態紀錄</p>
+        <strong>最近一次單位狀態變更 · ${changes.flats.length} 間</strong>
+        <small>記錄於 ${formatTime(changes.event.at)} HKT · 標示至下一次單位變更或紀錄到期</small></div>
+      <span class="changes-symbol">! 狀態有變</span>
+    </div>
+    <div class="changes-counts">${byBlock.map(group =>
+      `<span>${NAMES[group.key]} ${group.count}</span>`).join("")}</div>
+    <details><summary>展開變更清單，按單位跳至表格</summary>
+      <div class="changes-list">${changes.flats.map(flat =>
+        `<button type="button" data-change-block="${flat.key}" data-change-flat="${flat.n}">
+          ${NAMES[flat.key]} ${flat.after.f}/F · ${flat.after.u}室
+          <small>${labels[flat.before.s]} → ${labels[flat.after.s]}</small>
+        </button>`).join("")}</div>
+    </details>`;
+}
+
 function areaText(band) {
   if (!band) return "原 PDF 沒有標示該狀態的面積類別";
   const low = band.min;
@@ -213,15 +243,14 @@ function areaText(band) {
   return `${low}${low === high ? "" : `–${high}`} 平方米`;
 }
 
-function renderMatrix(snapshot) {
+function renderMatrix(snapshot, changes = lastStatusChange(state.history, state.chosen)) {
   const key = state.activeBlock;
   const block = snapshot.blocks[key];
   const isKai = block.court === "kai-yeung";
   const maxUnit = isKai ? (block.block === "A" ? 17 : 29) : 22;
   const floors = [...new Set(block.flats.map(flat => flat.f))].sort((a, b) => b - a);
   const flats = new Map(block.flats.map(flat => [`${flat.f}-${flat.u}`, flat]));
-  const changed = state.chosen === "latest" && Date.now() - Date.parse(state.history.events.at(-1)?.at || 0) < 30 * 60 * 1000
-    ? recentChanges(state.history) : new Set();
+  const changed = new Set(changes?.flats.map(flat => `${flat.key}-${flat.n}`) ?? []);
   const filteredCount = block.flats.filter(flat => flat.s === "available" && state.categories.has(flat.a)).length;
   $("matrix-title").textContent = `${NAMES[key]} · 所選類別尚餘 ${filteredCount} 間`;
   $("matrix-meta").textContent = `全座未售 ${block.remaining} 間 ｜ 官方 PDF：${officialTime(block.modifiedAt)} ｜ 橫向排列與原表格一致`;
@@ -233,6 +262,7 @@ function renderMatrix(snapshot) {
     '<span class="legend-item"><i class="legend-swatch sold"></i>已售</span>',
     '<span class="legend-item"><i class="legend-swatch selected"></i>已選</span>',
     '<span class="legend-item"><i class="legend-swatch match"></i>偏好室號</span>',
+    '<span class="legend-item"><i class="legend-swatch change"></i>最近一次狀態變更</span>',
   ].join("");
   let ranks = new Map();
   try { ranks = parsePreferences(state.profile.rankings || ""); } catch { /* Invalid drafts are not saved. */ }
@@ -245,14 +275,15 @@ function renderMatrix(snapshot) {
       if (!flat) { cells.push('<div class="matrix-cell" aria-hidden="true"></div>'); continue; }
       const inFilter = flat.s !== "available" || state.categories.has(flat.a);
       const match = ranks.has(`${key}-${unit}`) && flat.s === "available";
-      const flash = changed.has(`${key}-${flat.n}`);
+      const statusChanged = changed.has(`${key}-${flat.n}`);
       const color = flat.s === "available" ? COLORS[block.court][flat.a] : "#fff";
       const darkText = flat.a === "small" || (block.court === "ying-fai" && flat.a === "medium");
       cells.push(`<button type="button" class="matrix-cell flat-cell ${flat.s}
-        ${inFilter ? "" : "filtered-out"} ${match ? "match" : ""} ${flash ? "recent-change" : ""}"
+        ${inFilter ? "" : "filtered-out"} ${match ? "match" : ""} ${statusChanged ? "recent-change" : ""}"
         style="--shade:${color};--cell-text:${darkText ? "#21342c" : "#fff"}"
-        data-flat="${flat.n}" aria-label="${NAMES[key]} ${floor}樓 ${unit}室 ${flat.s === "available" ? "未售" : flat.s === "sold" ? "已售" : "已選"}"
-        title="${floor}樓 ${unit}室"><span class="flat-inner"><span>${unit}</span></span></button>`);
+        data-flat="${flat.n}" aria-label="${NAMES[key]} ${floor}樓 ${unit}室 ${flat.s === "available" ? "未售" : flat.s === "sold" ? "已售" : "已選"}${statusChanged ? "，最近一次狀態變更" : ""}"
+        title="${floor}樓 ${unit}室${statusChanged ? " · 狀態有變" : ""}"><span class="flat-inner"><span>${unit}</span>
+        ${statusChanged ? '<i class="change-mark" aria-hidden="true">!</i>' : ""}</span></button>`);
     }
   }
   const matrix = $("matrix");
@@ -296,11 +327,13 @@ function renderShortlist(snapshot) {
 function render() {
   if (!state.latest) return;
   const snapshot = current();
+  const changes = lastStatusChange(state.history, state.chosen);
   renderQuotas(snapshot);
   renderFilters(snapshot);
   renderCourtSummary(snapshot);
   renderTabs();
-  renderMatrix(snapshot);
+  renderChanges(changes);
+  renderMatrix(snapshot, changes);
   renderShortlist(snapshot);
 }
 
@@ -384,6 +417,17 @@ function bindEvents() {
     $("matrix-scroll").scrollTo({ top: 0, left: 0 });
     renderTabs();
     renderMatrix(current());
+  });
+  $("changes-panel").addEventListener("click", event => {
+    const button = event.target.closest("[data-change-block]");
+    if (!button) return;
+    state.activeBlock = button.dataset.changeBlock;
+    renderTabs();
+    renderMatrix(current());
+    const flat = $("matrix").querySelector(`[data-flat="${button.dataset.changeFlat}"]`);
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    flat?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "center", inline: "center" });
+    flat?.focus({ preventScroll: true });
   });
   $("matrix").addEventListener("click", event => {
     const cell = event.target.closest("[data-flat]");

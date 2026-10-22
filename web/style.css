@@ -139,6 +139,19 @@ h2 { font-size: clamp(25px, 3vw, 39px); line-height: 1.35; letter-spacing: -.04e
 .block-tab:hover { background: #e3e7da; }
 .history-control { display: flex; align-items: center; gap: 9px; padding-bottom: 8px; color: var(--muted); font-size: 11px; }
 .history-control select { border: 1px solid var(--line); padding: 7px 9px; color: var(--ink); background: #fffdfa; max-width: 220px; }
+.changes-panel { margin: 24px 0 0; padding: 20px 23px; border: 1px solid #e4b8a3; border-left: 5px solid #c76843; background: linear-gradient(115deg, #f9eadd, #fffcf5 78%); }
+.changes-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.changes-heading .eyebrow { margin: 0 0 8px; }
+.changes-heading strong { display: block; font: 600 19px var(--serif); }
+.changes-heading small { display: block; margin-top: 7px; color: var(--muted); font-size: 10px; }
+.changes-symbol { flex: none; padding: 8px 11px; background: #c76843; color: white; font-size: 11px; font-weight: 700; }
+.changes-counts { display: flex; flex-wrap: wrap; gap: 7px; margin: 17px 0 14px; }
+.changes-counts span { border: 1px solid #e1bb9e; padding: 5px 9px; font-size: 11px; }
+.changes-panel summary { width: fit-content; cursor: pointer; font-size: 11px; font-weight: 700; color: #a44b31; }
+.changes-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 7px; max-height: 250px; overflow: auto; margin-top: 15px; }
+.changes-list button { border: 1px solid #ead6c6; background: #fffdfa; color: var(--ink); padding: 9px 10px; text-align: left; font-size: 11px; cursor: pointer; }
+.changes-list button:hover { border-color: #c76843; }
+.changes-list button small { display: block; margin-top: 3px; color: #a44b31; }
 .matrix-header { display: flex; justify-content: space-between; align-items: center; gap: 15px; padding: 30px 0 17px; }
 .matrix-header h3 { font: 600 25px var(--serif); margin-bottom: 6px; }
 .matrix-header p { font-size: 11px; color: var(--muted); margin: 0; }
@@ -149,6 +162,7 @@ h2 { font-size: clamp(25px, 3vw, 39px); line-height: 1.35; letter-spacing: -.04e
 .legend-swatch.sold::after { content: "×"; position: absolute; top: -4px; left: 2px; font-size: 17px; }
 .legend-swatch.selected { background: #fff; }
 .legend-swatch.match { background: transparent; outline: 2px solid var(--accent); border: 0; }
+.legend-swatch.change { background: #fff6ec; outline: 2px solid #c76843; border: 0; }
 .table-guide { color: #74857b; font-size: 10px; margin: 14px 0 7px; }
 .matrix-scroll { width: 100%; overflow: auto; background: #fffefa; border: 1px solid var(--line); max-height: 685px; scrollbar-color: #9db2a4 #f3f3e9; }
 .matrix { display: grid; width: max-content; min-width: 100%; gap: 0; padding: 12px 15px 19px 0; }
@@ -166,8 +180,10 @@ h2 { font-size: clamp(25px, 3vw, 39px); line-height: 1.35; letter-spacing: -.04e
 .flat-cell.sold .flat-inner span { background: white; z-index: 1; padding: 1px; }
 .flat-cell.filtered-out .flat-inner { opacity: .22; }
 .flat-cell.match .flat-inner { outline: 2px solid var(--accent); outline-offset: 1px; }
-.flat-cell.recent-change .flat-inner { animation: alert-square 1.1s ease-in-out 5; }
-@keyframes alert-square { 50% { box-shadow: 0 0 0 4px #cf5c43, 0 0 19px #cf5c4380; } }
+.flat-cell.recent-change { position: relative; z-index: 1; }
+.flat-cell.recent-change .flat-inner { outline: 3px solid #c76843; outline-offset: 0; box-shadow: 0 0 0 3px #fff4e9; }
+.flat-cell.filtered-out.recent-change .flat-inner { opacity: 1; }
+.flat-cell.recent-change .change-mark { position: absolute; top: -5px; right: -5px; z-index: 3; display: grid; place-items: center; width: 14px; height: 14px; background: #c76843; color: #fff; border-radius: 50%; font: 700 10px var(--sans); font-style: normal; }
 .matrix-empty { padding: 30px; color: var(--muted); }
 
 .shortlist { background: #fffdf8; }
@@ -231,6 +247,9 @@ h2 { font-size: clamp(25px, 3vw, 39px); line-height: 1.35; letter-spacing: -.04e
   .refresh-controls { align-items: start; }
   .filter-heading { align-items: start; flex-direction: column; gap: 4px; }
   .history-control { padding: 0 0 9px 10px; }
+  .changes-panel { padding: 18px; }
+  .changes-heading { align-items: flex-start; }
+  .changes-symbol { font-size: 10px; }
   .matrix-header { align-items: start; flex-direction: column; }
   .footer { flex-direction: column; }
 }

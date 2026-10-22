@@ -64,17 +64,32 @@ export function snapshotAt(latest, history, index) {
   return snapshot;
 }
 
-export function recentChanges(history) {
-  const latestEvent = history.events.at(-1);
-  if (!latestEvent) return new Set();
-  const changed = new Set();
-  for (const [key, block] of Object.entries(latestEvent.blocks)) {
+function statusChanges(event) {
+  const flats = [];
+  for (const [key, block] of Object.entries(event.blocks)) {
     if (block.beforeModified === block.afterModified) continue;
-    for (const flat of block.flats) {
-      if (flat.before.s !== flat.after.s) changed.add(`${key}-${flat.n}`);
+    for (const change of block.flats) {
+      if (change.before.s !== change.after.s) flats.push({ key, ...change });
     }
   }
-  return changed;
+  return flats;
+}
+
+export function lastStatusChange(history, selected = "latest") {
+  if (selected === -1) return null;
+  const lastIndex = selected === "latest" ? history.events.length - 1 : selected;
+  for (let i = lastIndex; i >= 0; i--) {
+    const event = history.events[i];
+    const flats = statusChanges(event);
+    if (flats.length) return { event, flats };
+    if (selected !== "latest") break;
+  }
+  return null;
+}
+
+export function recentChanges(history, selected = "latest") {
+  const change = lastStatusChange(history, selected);
+  return new Set(change?.flats.map(flat => `${flat.key}-${flat.n}`) ?? []);
 }
 
 export function parsePreferences(text) {
