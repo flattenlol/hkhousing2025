@@ -1,8 +1,11 @@
+import { isCheckingWindow } from "../web/schedule.mjs";
+
 const HEARTBEAT_URL = "https://flattenlol.github.io/hkhousing2025/data/heartbeat.json";
 const DISPATCH_URL = "https://api.github.com/repos/flattenlol/hkhousing2025/actions/workflows/publish.yml/dispatches";
-const MAX_AGE_MS = 13 * 60_000;
+const MAX_AGE_MS = 28 * 60_000;
 
 export async function dispatchIfStale(token, fetcher = fetch, now = Date.now()) {
+  if (!isCheckingWindow(now)) return false;
   if (!token) throw new Error("GITHUB_DISPATCH_TOKEN is not configured");
 
   try {

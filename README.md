@@ -25,11 +25,11 @@ node --test tests/test_model.mjs
 
 ## 免費公開部署
 
-將專案推到 GitHub `main`，到 repository **Settings → Pages → Build and deployment** 選 **GitHub Actions**。`.github/workflows/publish.yml` 會於 push、手動觸發及約每 15 分鐘的排程執行，解析資料、記錄公開快照、渲染售樓說明書節錄並部署 `web/`。只有官方 PDF 實際改變才會提交快照到 `main`；沒有變更時仍會發布新檢查時間，不會增加 Git 提交。GitHub 排程可能延遲；請以頁面上的「資料擷取」及各 PDF「官方更新」時間判斷新舊。Actions 需具備 `contents: write` 權限以提交狀態檔；如果 repository 禁止 workflow 寫入，請於 **Settings → Actions → General → Workflow permissions** 啟用 read/write。
+將專案推到 GitHub `main`，到 repository **Settings → Pages → Build and deployment** 選 **GitHub Actions**。`.github/workflows/publish.yml` 會於 push、手動觸發及香港時間 **09:30–22:00 每 30 分鐘**（每日 26 個時段）的排程執行，解析資料、記錄公開快照、渲染售樓說明書節錄並部署 `web/`。只有官方 PDF 實際改變才會提交快照到 `main`；沒有變更時仍會發布新檢查時間，不會增加 Git 提交。GitHub 排程可能延遲或漏執行；請以頁面上的「資料擷取」及各 PDF「官方更新」時間判斷新舊。Actions 需具備 `contents: write` 權限以提交狀態檔；如果 repository 禁止 workflow 寫入，請於 **Settings → Actions → General → Workflow permissions** 啟用 read/write。[GitHub 官方文件](https://docs.github.com/en/billing/managing-billing-for-your-products/managing-billing-for-github-actions)指出 public repo 使用標準 runner 的 Actions 用量免費；減少排程主要是節省工作量及官方 PDF 請求。
 
-「讀取最新已發布資料」只重新讀取部署的 JSON，不會立即抓取官方 PDF；同一瀏覽器一分鐘內不能再按。網站每 15 分鐘自動檢查已發布版本。需要即時向房委會抓取 PDF 時，必須另建可執行程式的後端。
+「讀取最新已發布資料」只重新讀取部署的 JSON，不會立即抓取官方 PDF；同一瀏覽器一分鐘內不能再按。網站在 09:30–22:00 HKT 每 30 分鐘自動檢查已發布版本，頁面載入及手動按鈕則隨時可讀取現有快照。需要即時向房委會抓取 PDF 時，必須另建可執行程式的後端。
 
-若 GitHub 排程漏執行，可選擇部署 [Cloudflare 備援排程](scheduler/README.md)。Worker 每 15 分鐘查看由每次成功檢查產生的小型 `web/data/heartbeat.json`；檢查時間過舊才要求 GitHub 執行現有 workflow。此排程目前只備妥在 repo，**尚未部署或設定憑證**。
+已部署的 [Cloudflare 備援排程](scheduler/README.md) 在選樓時段每 30 分鐘查看由每次成功檢查產生的小型 `web/data/heartbeat.json`；檢查時間過舊才要求 GitHub 執行現有 workflow。GitHub 最後的 22:00 檢查不設 Cloudflare 備援，以免 22:00 後觸發額外抓取。
 
 個人申請編號及選樓時間只存在本機瀏覽器的 `localStorage`，不會提交到 GitHub 或放在靜態檔案。於「私人選樓坐標」手動填入資料：優先屋苑、偏好樓層、兩苑各自不偏好的樓層（範圍與單層可用逗號分隔，例如 `8-10, 32`），及每行一個座別的排序（例：`啟陽 A: 1 > 2 = 3`）。同一屋苑跨行由上至下排序。清除瀏覽器網站資料可移除私人設定。
 

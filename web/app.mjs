@@ -3,6 +3,7 @@ import {
   createPreferenceUrl, parseAvoidFloors, parsePreferences, planPagesForFlat,
   quotaHourDelta, readPreferenceUrl, lastStatusChange, shortlist, snapshotAt,
 } from "./model.mjs";
+import { isCheckingWindow, shouldWarnStale } from "./schedule.mjs";
 
 const PDF_BASE = "https://www.housingauthority.gov.hk/mini-site/hos2025/common/pdf/status/";
 const LABELS = { small: "小型", medium: "中型", large: "大型", xlarge: "特大型" };
@@ -135,8 +136,8 @@ async function loadData() {
     state.history = history;
     $("error").hidden = true;
     $("checked-time").textContent = `資料擷取 ${formatTime(latest.checkedAt)} HKT`;
-    if (Date.now() - Date.parse(latest.checkedAt) > 45 * 60_000) {
-      showError("已發布資料超過 45 分鐘未完成新檢查，可能不是最新狀態。請查看官方 PDF。");
+    if (shouldWarnStale(latest.checkedAt)) {
+      showError("例行檢查時段的資料超過 75 分鐘未更新，可能不是最新狀態。請查看官方 PDF。");
     }
     updateHistoryOptions();
     render();
@@ -471,5 +472,7 @@ loadProfile();
 bindEvents();
 updateCooldown();
 loadData();
-setInterval(loadData, 15 * 60_000);
+setInterval(() => {
+  if (isCheckingWindow(Date.now())) loadData();
+}, 30 * 60_000);
 setInterval(updateCooldown, 1000);

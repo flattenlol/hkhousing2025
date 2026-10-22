@@ -21,7 +21,7 @@ test("stale published data dispatches the existing workflow with a repo-scoped s
   const calls = [];
   const fetcher = async (url, options) => {
     calls.push({ url, options });
-    return calls.length === 1 ? heartbeat("2026-10-22T10:00:00Z") : accepted;
+    return calls.length === 1 ? heartbeat("2026-10-22T09:50:00Z") : accepted;
   };
   assert.equal(await dispatchIfStale("example-token", fetcher, now), true);
   assert.equal(calls.length, 2);
@@ -51,6 +51,13 @@ test("missing or malformed heartbeat requests a check", async () => {
 test("missing secret and failed dispatch are visible failures, without logging credentials", async () => {
   await assert.rejects(dispatchIfStale("", async () => accepted, now), /not configured/);
   let calls = 0;
-  const fetcher = async () => (++calls === 1 ? heartbeat("2026-10-22T10:00:00Z") : { ok: false, status: 401 });
+  const fetcher = async () => (++calls === 1 ? heartbeat("2026-10-22T09:50:00Z") : { ok: false, status: 401 });
   await assert.rejects(dispatchIfStale("example-token", fetcher, now), /HTTP 401/);
+});
+
+test("outside selection hours the Worker never calls GitHub, even if the heartbeat is stale", async () => {
+  let calls = 0;
+  const fetcher = async () => { calls++; return accepted; };
+  assert.equal(await dispatchIfStale("example-token", fetcher, Date.parse("2026-10-22T14:01:00Z")), false);
+  assert.equal(calls, 0);
 });
